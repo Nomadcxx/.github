@@ -53,7 +53,7 @@ func TestSyscCompositorIsOutOfRolloutScope(t *testing.T) {
 		project := row.Cells["Project"]
 		outOfScope := strings.HasPrefix(row.Cells["Branch protection state"], "out of scope:")
 		if project == "sysc-compositor" {
-			if !outOfScope || !strings.Contains(row.Cells["Shared caller workflow path"], "out of scope") || !strings.Contains(row.Cells["Required check-run names"], "out of scope") {
+			if !outOfScope || !strings.Contains(row.Cells["Shared caller workflow path"], "outside rollout scope") || !strings.Contains(row.Cells["Required check-run names"], "outside rollout scope") {
 				t.Fatalf("sysc-compositor rollout scope = %q / %q / %q", row.Cells["Branch protection state"], row.Cells["Shared caller workflow path"], row.Cells["Required check-run names"])
 			}
 			return
