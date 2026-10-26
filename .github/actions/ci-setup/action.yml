@@ -1,0 +1,10 @@
+name: CI setup
+
+description: Native setup hook for repositories that call the shared Go verification workflow.
+
+runs:
+  using: composite
+  steps:
+    - name: No additional setup for the central workflow repository
+      shell: bash
+      run: echo 'This repository needs no additional native packages.'

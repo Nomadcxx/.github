@@ -6,7 +6,11 @@ on:
       - MATRIX.md
       - matrix/**
       - scripts/check-matrix-live.sh
+      - scripts/check-workflow-contract.sh
       - go.mod
+      - .github/actions/ci-setup/action.yml
+      - .github/workflows/example-caller.yml
+      - .github/workflows/go-verify.yml
       - .github/workflows/matrix-audit.yml
   workflow_dispatch:
   schedule:
@@ -26,3 +30,17 @@ jobs:
           go-version-file: go.mod
       - run: go test ./matrix
       - run: scripts/check-matrix-live.sh
+  workflow-contract:
+    name: workflow-contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # v6.0.0
+        with:
+          go-version-file: go.mod
+      - name: Install pinned workflow validators
+        run: |
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+          go install github.com/mikefarah/yq/v4@v4.45.1
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+      - run: scripts/check-workflow-contract.sh
