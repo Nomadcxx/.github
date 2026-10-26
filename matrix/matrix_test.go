@@ -44,6 +44,27 @@ func TestMatrixColumnsAreComplete(t *testing.T) {
 	}
 }
 
+func TestSyscCompositorIsOutOfRolloutScope(t *testing.T) {
+	rows, err := ReadFile("../MATRIX.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, row := range rows {
+		project := row.Cells["Project"]
+		outOfScope := strings.HasPrefix(row.Cells["Branch protection state"], "out of scope:")
+		if project == "sysc-compositor" {
+			if !outOfScope || !strings.Contains(row.Cells["Shared caller workflow path"], "out of scope") || !strings.Contains(row.Cells["Required check-run names"], "out of scope") {
+				t.Fatalf("sysc-compositor rollout scope = %q / %q / %q", row.Cells["Branch protection state"], row.Cells["Shared caller workflow path"], row.Cells["Required check-run names"])
+			}
+			return
+		}
+		if outOfScope {
+			t.Errorf("%s unexpectedly marked out of scope", project)
+		}
+	}
+	t.Fatal("sysc-compositor row missing")
+}
+
 func TestMatrixBranchesMatchFixtures(t *testing.T) {
 	rows, err := ReadFile("../MATRIX.md")
 	if err != nil {

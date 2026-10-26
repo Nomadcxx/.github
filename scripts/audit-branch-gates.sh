@@ -56,8 +56,12 @@ ruleset_matches_default_branch() {
 
 failures=0
 rows=0
-while IFS=$'\t' read -r project repository branch expected_checks; do
+while IFS=$'\t' read -r project repository branch expected_checks branch_protection; do
   [[ -n "$project" ]] || continue
+  if [[ "$branch_protection" == out\ of\ scope:* ]]; then
+    printf 'skipped %s: %s\n' "$project" "$branch_protection"
+    continue
+  fi
   rows=$((rows + 1))
   if [[ ! "$repository" =~ ^Nomadcxx/[A-Za-z0-9._-]+$ ]]; then
     record_failure "$project" "$branch" "invalid repository value: $repository"
@@ -110,13 +114,14 @@ in_matrix && /^\|/ {
   repository = trim($3)
   branch = trim($4)
   checks = trim($9)
+  branch_protection = trim($6)
   if (project == "sysc/aur" || project == "void-packages") next
   if (project == "" || repository == "" || branch == "") {
     printf "incomplete matrix row at line %d\n", NR > "/dev/stderr"
     exit 1
   }
   rows++
-  print project "\t" repository "\t" branch "\t" checks
+  print project "\t" repository "\t" branch "\t" checks "\t" branch_protection
   next
 }
 in_matrix { exit }
@@ -128,11 +133,11 @@ END {
 }
 ' "$matrix")
 
-if [[ "$rows" -ne 17 ]]; then
-  record_failure MATRIX "$rows project rows" "expected 17 project rows"
+if [[ "$rows" -ne 16 ]]; then
+  record_failure MATRIX "$rows in-scope project rows" "expected 16 in-scope project rows"
 fi
 if [[ "$failures" -ne 0 ]]; then
-  printf 'branch gate audit failed: %d issue(s) across %d project row(s)\n' "$failures" "$rows" >&2
+  printf 'branch gate audit failed: %d issue(s) across %d in-scope project row(s)\n' "$failures" "$rows" >&2
   exit 1
 fi
-printf 'branch gate audit passed for all %d projects\n' "$rows"
+printf 'branch gate audit passed for all %d in-scope projects\n' "$rows"
