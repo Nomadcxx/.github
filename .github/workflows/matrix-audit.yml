@@ -7,6 +7,7 @@ on:
       - matrix/**
       - scripts/check-matrix-live.sh
       - scripts/check-workflow-contract.sh
+      - scripts/audit-branch-gates.sh
       - go.mod
       - .github/actions/ci-setup/action.yml
       - .github/workflows/example-caller.yml
@@ -44,3 +45,4 @@ jobs:
           go install github.com/mikefarah/yq/v4@v4.45.1
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - run: scripts/check-workflow-contract.sh
+      - run: bash -n scripts/audit-branch-gates.sh
