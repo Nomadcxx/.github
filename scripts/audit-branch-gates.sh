@@ -76,16 +76,24 @@ while IFS=$'\t' read -r project repository branch expected_checks branch_protect
     continue
   fi
 
+  # ponytail: the ruleset list endpoint returns summary objects only; the rule bodies and the ref conditions live on the per-id endpoint, so read each one by id.
   matching_rulesets='[]'
-  while IFS= read -r ruleset; do
+  while IFS= read -r ruleset_id; do
+    if ! ruleset=$(gh api --method GET "repos/$repository/rulesets/$ruleset_id"); then
+      record_failure "$project" "$branch" "could not read ruleset $ruleset_id"
+      continue
+    fi
     if ruleset_matches_default_branch "$ruleset" "$branch"; then
       matching_rulesets=$(jq -c --argjson ruleset "$ruleset" '. + [$ruleset]' <<< "$matching_rulesets")
     fi
-  done < <(jq -c '.[] | select(.target == "branch")' <<< "$rulesets")
+  done < <(jq -r '.[] | select(.target == "branch") | .id' <<< "$rulesets")
 
   if [[ $(jq 'length' <<< "$matching_rulesets") == 0 ]]; then
     record_failure "$project" "$branch" "no branch ruleset matches refs/heads/$branch"
     continue
+  fi
+  if ! jq -e 'any(.[]; .enforcement == "active")' <<< "$matching_rulesets" >/dev/null; then
+    record_failure "$project" "$branch" "no matching ruleset is active"
   fi
   if ! jq -e 'any(.[]; any(.rules[]?; .type == "pull_request"))' <<< "$matching_rulesets" >/dev/null; then
     record_failure "$project" "$branch" "matching rulesets do not require pull requests"
